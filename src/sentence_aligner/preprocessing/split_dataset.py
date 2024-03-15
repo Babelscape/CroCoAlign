@@ -1,8 +1,8 @@
 import argparse
 import ntpath
 
-class DatasetPreprocess():
 
+class DatasetPreprocess:
     def __init__(self) -> None:
         pass
 
@@ -32,15 +32,28 @@ class DatasetPreprocess():
         file.close()
 
     def save_dataset(self, split_type, samples, filename):
-        fw = open(f"/mnt/data/neural-sentence-aligner/data/opus/books/{split_type}/{split_type}_{filename}", "w")
+        fw = open(
+            f"/mnt/data/neural-sentence-aligner/data/opus/books/{split_type}/{split_type}_{filename}",
+            "w",
+        )
         for line in samples:
             fw.write(line)
         fw.close()
-    
+
     def initialize(self):
-        parser = argparse.ArgumentParser(description="DatasetPreprocess arguments usage: ", add_help=True)
-        parser.add_argument("filepath", help="Path to the file containing the ground truth (supported format: jsonl).")
-        parser.add_argument("-t", "--test", action="store_true", help="Flag telling if the file is to be used as a test set (supported format: jsonl).")
+        parser = argparse.ArgumentParser(
+            description="DatasetPreprocess arguments usage: ", add_help=True
+        )
+        parser.add_argument(
+            "filepath",
+            help="Path to the file containing the ground truth (supported format: jsonl).",
+        )
+        parser.add_argument(
+            "-t",
+            "--test",
+            action="store_true",
+            help="Flag telling if the file is to be used as a test set (supported format: jsonl).",
+        )
         args = parser.parse_args()
 
         input_file = args.filepath
@@ -49,7 +62,5 @@ class DatasetPreprocess():
         self.preprocess(input_file, test_flag)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     DatasetPreprocess().initialize()
-
-    

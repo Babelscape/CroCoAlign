@@ -81,7 +81,9 @@ class MetaData:
         """
         pylogger.debug(f"Loading MetaData from '{src_path}'")
 
-        dataset_names = json.loads((src_path / "class_vocab.json").read_text(encoding="utf-8"))
+        dataset_names = json.loads(
+            (src_path / "class_vocab.json").read_text(encoding="utf-8")
+        )
 
         return MetaData(
             dataset_names=dataset_names,
@@ -106,8 +108,11 @@ def worker_init_fn(id: int):
     random.seed(uint64_seed)
 
 
-def encode_samples(samples: List, context_tokenizer: PreTrainedTokenizer, gloss_tokenizer: PreTrainedTokenizer):
-
+def encode_samples(
+    samples: List,
+    context_tokenizer: PreTrainedTokenizer,
+    gloss_tokenizer: PreTrainedTokenizer,
+):
     pretokenized = any([a["pretokenized"] for a in samples if "pretokenized" in a])
 
     samples_sources = [s["sources"] for s in samples]
@@ -143,10 +148,10 @@ def encode_samples(samples: List, context_tokenizer: PreTrainedTokenizer, gloss_
         i += len(source_indices)
         j += len(target_indices)
     gold_matrix = []
-    for i,j in  torch.cartesian_prod(torch.arange(0, len(sources)),
-                         torch.arange(0, len(targets))).tolist():
+    for i, j in torch.cartesian_prod(
+        torch.arange(0, len(sources)), torch.arange(0, len(targets))
+    ).tolist():
         gold_matrix.append((i, j) in gold_indices)
-
 
     target_encodings = context_tokenizer(
         targets,
@@ -177,8 +182,14 @@ def encode_samples(samples: List, context_tokenizer: PreTrainedTokenizer, gloss_
     return output
 
 
-def collate_fn(samples: List, gloss_tokenizer: PreTrainedTokenizer, context_tokenizer: PreTrainedTokenizer):
-    encoded_example = encode_samples(samples, gloss_tokenizer=gloss_tokenizer, context_tokenizer=context_tokenizer)
+def collate_fn(
+    samples: List,
+    gloss_tokenizer: PreTrainedTokenizer,
+    context_tokenizer: PreTrainedTokenizer,
+):
+    encoded_example = encode_samples(
+        samples, gloss_tokenizer=gloss_tokenizer, context_tokenizer=context_tokenizer
+    )
     return encoded_example
 
 
@@ -205,7 +216,9 @@ class MyDataModule(pl.LightningDataModule):
 
         self.max_ids = max_ids
         self.root_path: Path = Path(root_path)
-        self.tokenizer: PreTrainedTokenizer = AutoTokenizer.from_pretrained(transformer_name)
+        self.tokenizer: PreTrainedTokenizer = AutoTokenizer.from_pretrained(
+            transformer_name
+        )
         self.train_dataset: Optional[MyDataset] = None
         self.val_datasets: Optional[Sequence[MyDataset]] = None
         self.test_datasets: Optional[Sequence[MyDataset]] = None
@@ -218,22 +231,27 @@ class MyDataModule(pl.LightningDataModule):
         self.samples: Dict[str, Dict[str, Dict[str, Any]]] = self._read_data()
 
     def _read_data(self):
-
         sample_data = dict()
-        
+
         r = random.Random(42)
         for split in ["train", "val", "test"]:
             valid_dataset_names: Optional[Set[str]] = self.split_types2names[split]
 
             data_path: Path = self.root_path / split
             for dataset_file in os.listdir(data_path):
-                if (valid_dataset_names is not None) and (dataset_file not in valid_dataset_names):
+                if (valid_dataset_names is not None) and (
+                    dataset_file not in valid_dataset_names
+                ):
                     continue
 
                 if split == "train":
-                    sample_data.setdefault(split, dict()).setdefault("train", []).append(data_path / dataset_file)
+                    sample_data.setdefault(split, dict()).setdefault(
+                        "train", []
+                    ).append(data_path / dataset_file)
                 else:
-                    sample_data.setdefault(split, dict())[dataset_file] = [data_path / dataset_file]
+                    sample_data.setdefault(split, dict())[dataset_file] = [
+                        data_path / dataset_file
+                    ]
         return sample_data
 
     @cached_property
@@ -265,25 +283,29 @@ class MyDataModule(pl.LightningDataModule):
         pass
 
     def setup(self, stage: Optional[str] = None):
-
         # Here you should instantiate your datasets, you may also split the train into train and validation if needed.
 
         if stage is None or stage == "fit":
             self.train_dataset = [
-                hydra.utils.instantiate(self.datasets.train, datamodule=self, task_name=task_name)
+                hydra.utils.instantiate(
+                    self.datasets.train, datamodule=self, task_name=task_name
+                )
                 for task_name in self.samples["train"].keys()
             ]
             self.val_datasets = [
-                hydra.utils.instantiate(self.datasets.val, datamodule=self, task_name=task_name)
+                hydra.utils.instantiate(
+                    self.datasets.val, datamodule=self, task_name=task_name
+                )
                 for task_name in self.samples["val"].keys()
             ]
             self.test_datasets = [
-                hydra.utils.instantiate(self.datasets.test, datamodule=self, task_name=task_name)
+                hydra.utils.instantiate(
+                    self.datasets.test, datamodule=self, task_name=task_name
+                )
                 for task_name in self.samples["test"].keys()
             ]
 
         # if stage is None or stage == "test":
-
 
     def train_dataloader(self) -> Sequence[DataLoader]:
         return [
@@ -341,7 +363,12 @@ class MyDataModule(pl.LightningDataModule):
         ]
 
     def __repr__(self) -> str:
-        return f"{self.__class__.__name__}(" f"{self.datasets=}, " f"{self.num_workers=}, " f"{self.batch_size=})"
+        return (
+            f"{self.__class__.__name__}("
+            f"{self.datasets=}, "
+            f"{self.num_workers=}, "
+            f"{self.batch_size=})"
+        )
 
 
 @hydra.main(config_path=str(PROJECT_ROOT / "conf"), config_name="default")

@@ -34,6 +34,7 @@ class CustomLoader(DataLoader):
         if len(batch) > 0:
             yield self.collate_fn(batch)
 
+
 def sample_generator(file_paths):
     for dataset_file in file_paths:
         with (dataset_file).open("r") as fr:
@@ -41,12 +42,15 @@ def sample_generator(file_paths):
                 # if len(samples) > 10000:
                 #     break
                 example = json.loads(line)
-                yield dict(sources=example["sources"]["text"],
-                            sources_ids=example["sources"]["ids"],
-                            sources_embs=torch.tensor(example["sources"]["embs"]),
-                            targets=example["targets"]["text"],
-                            targets_ids=example["targets"]["ids"],
-                            targets_embs=torch.tensor(example["targets"]["embs"]))
+                yield dict(
+                    sources=example["sources"]["text"],
+                    sources_ids=example["sources"]["ids"],
+                    sources_embs=torch.tensor(example["sources"]["embs"]),
+                    targets=example["targets"]["text"],
+                    targets_ids=example["targets"]["ids"],
+                    targets_embs=torch.tensor(example["targets"]["embs"]),
+                )
+
 
 class MyDataset(IterableDataset):
     def __init__(self, split: Split, datamodule, task_name, **kwargs):
@@ -75,7 +79,9 @@ def main(cfg: omegaconf.DictConfig) -> None:
     Args:
         cfg: the hydra configuration
     """
-    _: Dataset = hydra.utils.instantiate(cfg.nn.data.datasets.train, split="train", _recursive_=False)
+    _: Dataset = hydra.utils.instantiate(
+        cfg.nn.data.datasets.train, split="train", _recursive_=False
+    )
 
 
 if __name__ == "__main__":

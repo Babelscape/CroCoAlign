@@ -1,6 +1,5 @@
 import argparse
 import csv
-import ntpath
 import os
 import time
 from collections import defaultdict
@@ -8,7 +7,7 @@ import math
 from pathlib import Path
 import jsonlines
 from itertools import combinations
-
+from typing import List, Dict, Tuple
 import numpy as np
 import torch
 import torch.nn as nn
@@ -17,24 +16,25 @@ import faiss
 from nn_core.serialization import load_model
 from pytorch_lightning.utilities import move_data_to_device
 from transformers import PreTrainedTokenizer, AutoTokenizer
+from sentence_transformers import SentenceTransformer
 from sentence_aligner.pl_modules.pl_module import MyLightningModule
 
 
 class TestEvaluator:
     def __init__(
         self,
-        ckpt_path,
-        data_dir,
-        precomputed_embeddings,
+        ckpt_path: str,
+        data_dir: str,
+        precomputed_embeddings: bool,
         batch_size=32,
         recovery="labse-batch",
         out="tsv",
     ):
-        self.device = "cuda"
-        self.precomputed_embeddings = precomputed_embeddings
-        self.recovery = recovery
-        self.fileformat = out
-        self.model = (
+        self.device: str = "cuda"
+        self.precomputed_embeddings: bool = precomputed_embeddings
+        self.recovery: str = recovery
+        self.fileformat: str = out
+        self.model: MyLightningModule = (
             load_model(
                 module_class=MyLightningModule,
                 checkpoint_path=Path(ckpt_path),
@@ -43,34 +43,42 @@ class TestEvaluator:
             .to(self.device)
             .eval()
         )
-        self.data_dir = Path(data_dir)
-        self.sentence_transformer_name = "sentence-transformers/LaBSE"
+        self.data_dir: Path = Path(data_dir)
+        self.sentence_transformer_name: str = "sentence-transformers/LaBSE"
         self.tokenizer: PreTrainedTokenizer = AutoTokenizer.from_pretrained(
             self.sentence_transformer_name
         )
-        self.sentence_encoder = self.model.transformer
-        self.batch_size = batch_size
-        self.k = 200
-        self.sid2stext = dict()
-        self.tid2ttext = dict()
-        self.sindex2sid = dict()
-        self.tindex2tid = dict()
-        self.sid2sindex = dict()
-        self.tid2tindex = dict()
-        self.source_result = dict()
-        self.target_result = dict()
-        self.ground_truth = dict()
-        self.sources_emb_matrix = []
-        self.targets_emb_matrix = []
+        self.sentence_encoder: SentenceTransformer = self.model.transformer
+        self.batch_size: int = batch_size
+        self.k: int = 200
+        self.sid2stext: dict = dict()
+        self.tid2ttext: dict = dict()
+        self.sindex2sid: dict = dict()
+        self.tindex2tid: dict = dict()
+        self.sid2sindex: dict = dict()
+        self.tid2tindex: dict = dict()
+        self.source_result: dict = dict()
+        self.target_result: dict = dict()
+        self.ground_truth: dict = dict()
+        self.sources_emb_matrix: list = []
+        self.targets_emb_matrix: list = []
 
-    def path_leaf(self, path):
-        _, tail = ntpath.split(path)
-        return tail
+    def encode_samples(
+        self,
+        sources_samples: List[Dict[str, List]],
+        targets_samples: List[Dict[str, List]],
+    ) -> Dict:
+        """
+        Collate function to create a batch from the current source and target samples
 
-    def join_target_text_combinations(self, combination):
-        return " ".join(combination)
+        Args:
+            sources_samples: List[Dict[str, List]] of source samples
+            targets_samples: List[Dict[str, List]] of target samples
 
-    def encode_samples(self, sources_samples, targets_samples):
+        Returns:
+            output: Dict containing the batched input data
+        """
+
         sources_ids = [g for s in sources_samples for g in s["sources_ids"]]
         targets_ids = [g for s in targets_samples for g in s["targets_ids"]]
 
@@ -113,7 +121,21 @@ class TestEvaluator:
 
         return output
 
-    def evaluate(self, sources, targets):
+    def evaluate(
+        self, sources: List[Dict[str, List]], targets: List[Dict[str, List]]
+    ) -> None:
+        """
+        Evaluate the model on the given sources and targets sentences contained in the input documents.
+
+        Args:
+            sources: List[Dict[str, List]] of source samples
+            targets: List[Dict[str, List]] of target samples
+
+        Note:
+            - min_dist = 0.05 is used to discard the target sentences that have an high relative distance
+              with respect to the source sentences.
+            - self.k regulates the number of nearest neighbors to be retrieved from the target sentences
+        """
         for i in range(math.ceil(len(sources) / self.batch_size)):
             source_start = i * self.batch_size
             source_context_start = max(0, source_start - (self.batch_size))
@@ -213,7 +235,11 @@ class TestEvaluator:
         elif self.recovery == "labse-batch":
             self.labse_batch_misalignments_recovery(sources, targets)
 
-    def labse_misalignments_recovery(self):
+    def labse_misalignments_recovery(self) -> None:
+        """
+        Recovery procedure to handle misalignments in the source result
+        by means of the LaBSE sentence embeddings.
+        """
         cosine_similarity = nn.CosineSimilarity(dim=0, eps=1e-6)
         for k, v in self.source_result.items():
             if len(v) > 1:
@@ -264,7 +290,17 @@ class TestEvaluator:
                             sim = cs
                             self.source_result[k] = target_ids_comb
 
-    def labse_batch_misalignments_recovery(self, sources, targets):
+    def labse_batch_misalignments_recovery(
+        self, sources: List[Dict[str, List]], targets: List[Dict[str, List]]
+    ) -> None:
+        """
+        Recovery procedure to handle misalignments in the source result
+        by means of the LaBSE sentence embeddings + the batched strategy
+
+        Args:
+            sources: List[Dict[str, List]] of source samples
+            targets: List[Dict[str, List]] of target samples
+        """
         cosine_similarity = nn.CosineSimilarity(dim=0, eps=1e-6)
         for k, v in self.source_result.items():
             if len(v) > 1:
@@ -346,22 +382,34 @@ class TestEvaluator:
                         if cs > sim:
                             sim = cs
                             self.source_result[k] = target_ids_comb
-    
-    def _precision(self, goldalign, testalign):
+
+    def _precision(self, goldalign: List[Tuple], testalign: List[Tuple]) -> np.ndarray:
         """
         Computes tpstrict, fpstrict, tplax, fplax for gold/test alignments
+        Original evaluation code available at: https://github.com/thompsonb/vecalign/blob/ca96a30716f12241e14f836b06705107c771987c/score.py#L35
+
+        Args:
+            goldalign: List[Tuple] of gold alignments
+            testalign: List[Tuple] of test alignments
+
+        Retruns:
+            np.ndarray: Array containing the tpstrict, fpstrict, tplax, fplax
         """
         tpstrict = 0  # true positive strict counter
-        tplax = 0     # true positive lax counter
+        tplax = 0  # true positive lax counter
         fpstrict = 0  # false positive strict counter
-        fplax = 0     # false positive lax counter
+        fplax = 0  # false positive lax counter
 
         # convert to sets, remove alignments empty on both sides
-        testalign = set([(tuple(x), tuple(y)) for x, y in testalign if len(x) or len(y)])
-        goldalign = set([(tuple(x), tuple(y)) for x, y in goldalign if len(x) or len(y)])
+        testalign = set(
+            [(tuple(x), tuple(y)) for x, y in testalign if len(x) or len(y)]
+        )
+        goldalign = set(
+            [(tuple(x), tuple(y)) for x, y in goldalign if len(x) or len(y)]
+        )
 
         # mappings from source test sentence idxs to
-        #    target gold sentence idxs for which the source test sentence 
+        #    target gold sentence idxs for which the source test sentence
         #    was found in corresponding source gold alignment
         src_id_to_gold_tgt_ids = defaultdict(set)
         for gold_src, gold_tgt in goldalign:
@@ -369,7 +417,7 @@ class TestEvaluator:
                 for gold_tgt_id in gold_tgt:
                     src_id_to_gold_tgt_ids[gold_src_id].add(gold_tgt_id)
 
-        for (test_src, test_target) in testalign:
+        for test_src, test_target in testalign:
             if (test_src, test_target) == ((), ()):
                 continue
             if (test_src, test_target) in goldalign:
@@ -378,7 +426,7 @@ class TestEvaluator:
                 tplax += 1
             else:
                 # For anything with partial gold/test overlap on the source,
-                #   see if there is also partial overlap on the gold/test target
+                # see if there is also partial overlap on the gold/test target
                 # If so, its a lax match
                 target_ids = set()
                 for src_test_id in test_src:
@@ -393,8 +441,24 @@ class TestEvaluator:
 
         return np.array([tpstrict, fpstrict, tplax, fplax], dtype=np.int32)
 
+    def score_multiple(
+        self,
+        gold_list: List[Dict[Tuple, Tuple]],
+        test_list: List[Dict[Tuple, Tuple]],
+        value_for_div_by_0=0.0,
+    ) -> Dict:
+        """
+        Compute the precision, recall and f1 score (strict and lax) for the given gold and test alignments.
+        Original code available at: https://github.com/thompsonb/vecalign/blob/ca96a30716f12241e14f836b06705107c771987c/score.py#L82
 
-    def score_multiple(self, gold_list, test_list, value_for_div_by_0=0.0):
+        Args:
+            gold_list: List[Dict[Tuple, Tuple]] of gold alignments
+            test_list: List[Dict[Tuple, Tuple]] of test alignments
+            value_for_div_by_0: Value to be used in case of division by 0
+
+        Returns:
+            result: Dict containing the precision, recall and f1 score (strict and lax)
+        """
         # accumulate counts for all gold/test files
         pcounts = np.array([0, 0, 0, 0], dtype=np.int32)
         rcounts = np.array([0, 0, 0, 0], dtype=np.int32)
@@ -443,16 +507,25 @@ class TestEvaluator:
         else:
             flax = 2 * (plax * rlax) / (plax + rlax)
 
-        result = dict(recall_strict=rstrict,
-                    recall_lax=rlax,
-                    precision_strict=pstrict,
-                    precision_lax=plax,
-                    f1_strict=fstrict,
-                    f1_lax=flax)
+        result = dict(
+            recall_strict=rstrict,
+            recall_lax=rlax,
+            precision_strict=pstrict,
+            precision_lax=plax,
+            f1_strict=fstrict,
+            f1_lax=flax,
+        )
 
         return result
 
-    def compute_results(self):
+    def compute_results(self) -> Dict:
+        """
+        Function to convert the self.source_result and self.ground_truth dictionaries into the format required by
+        the self.score_multiple function.
+
+        Returns:
+            results: Dict containing the precision, recall and f1 score (strict and lax)
+        """
         gt_tid2sid = dict()
         crocoalign_tid2sid = dict()
         keys = list(self.ground_truth.keys())
@@ -468,23 +541,30 @@ class TestEvaluator:
                 crocoalign_tid2sid[crocoalign_target_ids] = [sid]
             else:
                 crocoalign_tid2sid[crocoalign_target_ids].append(sid)
-            
+
         gt_sid2tid = {tuple(sorted(v)): k for k, v in gt_tid2sid.items() if len(k) > 0}
         for k, v in gt_tid2sid.items():
             if len(k) == 0:
                 for sid in v:
                     gt_sid2tid[tuple([sid])] = tuple([])
-        crocoalign_sid2tid = {tuple(sorted(v)): k for k, v in crocoalign_tid2sid.items() if len(k) > 0 and k != tuple([''])}
+        crocoalign_sid2tid = {
+            tuple(sorted(v)): k
+            for k, v in crocoalign_tid2sid.items()
+            if len(k) > 0 and k != tuple([""])
+        }
         for k, v in crocoalign_tid2sid.items():
-            if len(k) == 0 or k == tuple(['']):
+            if len(k) == 0 or k == tuple([""]):
                 for sid in v:
                     crocoalign_sid2tid[tuple([sid])] = tuple([])
-        
+
         results = self.score_multiple([gt_sid2tid], [crocoalign_sid2tid])
         return results
 
-
-    def cluster_result(self):
+    def cluster_result(self) -> None:
+        """
+        Function to cluster the results: for each source sentence which shares a target sentence
+        with another source sentence, join their predictions.
+        """
         values_dict = dict()
         cluster_result = dict()
         final_result = dict()
@@ -510,7 +590,11 @@ class TestEvaluator:
 
         self.source_result = final_result
 
-    def sanity_check(self):
+    def sanity_check(self) -> None:
+        """
+        Function to perform a sanity check on the results.
+        The function checks if the model has correctly made as assignment for each source and target sentence.
+        """
         print(f"CroCoAlign N° KEYS: {len(self.source_result.keys())}")
         print(f"GROUND TRUTH N° KEYS: {len(self.ground_truth.keys())}")
         a = set(self.source_result.keys())
@@ -518,13 +602,18 @@ class TestEvaluator:
         diff = b.difference(a)
         diff2 = a.difference(b)
         print(f"DIFF GT - CroCoAlign (sid): {[k for k in list(diff)]}")
-        print(f"DIFF NEURAL - GT (sid): {[k for k in list(diff2)]}")
+        print(f"DIFF CroCoAlign - GT (sid): {[k for k in list(diff2)]}")
 
-    def write_results_file(self, filename):
-        if self.fileformat == "jsonl":
-            out = jsonlines.open(
-                "results_" + self.path_leaf(filename)[:-6] + ".jsonl", "w"
-            )
+    def write_results_file(self, filename: str, fileformat: str) -> None:
+        """
+        Function to write the results into a file.
+
+        Args:
+            filename: Name of the file to be written
+            fileformat: Format of the file to be written
+        """
+        if fileformat == "jsonl":
+            out = jsonlines.open("results_" + filename, "w")
             for k, v in self.source_result.items():
                 row = dict()
                 row["sources"] = {"ids": [k], "text": [self.sid2stext[k]]}
@@ -532,7 +621,7 @@ class TestEvaluator:
                 out.write(row)
             out.close()
         else:
-            out = open("results_" + self.path_leaf(filename)[:-6] + ".tsv", "w")
+            out = open("results_" + filename.split(".")[0] + ".tsv", "w")
             writer = csv.writer(out, delimiter="\t")
             writer.writerow(
                 ["sources_ids", "source_sentences", "targets_ids", "target_sentences"]
@@ -697,13 +786,15 @@ class TestEvaluator:
             avg_result["f1_lax"] += results["f1_lax"]
             print(f"{tf} RESULTS: {results}")
 
-            self.write_results_file(tf)
+            self.write_results_file(tf, self.fileformat)
 
         avg_time = avg_time / len(test_files)
         avg_result["f1_strict"] = avg_result["f1_strict"] / len(test_files)
         avg_result["f1_lax"] = avg_result["f1_lax"] / len(test_files)
         print(f"AVG TIME TAKEN: {avg_time} seconds")
-        print(f"AVG RESULTS: STRICT F1 {avg_result['f1_strict']}, LAX F1 {avg_result['f1_lax']}")
+        print(
+            f"AVG RESULTS: STRICT F1 {avg_result['f1_strict']}, LAX F1 {avg_result['f1_lax']}"
+        )
 
 
 if __name__ == "__main__":

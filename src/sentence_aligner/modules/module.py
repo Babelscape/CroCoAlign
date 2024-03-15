@@ -31,7 +31,10 @@ class TextEncoder(pl.LightningModule):
 
         inputs = dict()
 
-        inputs["input_ids"], inputs["attention_mask"] = batch["input_ids"], batch["attention_mask"]
+        inputs["input_ids"], inputs["attention_mask"] = (
+            batch["input_ids"],
+            batch["attention_mask"],
+        )
         transformer_out = self.transformer(inputs)
 
         return dict(encoding=transformer_out["sentence_embedding"])

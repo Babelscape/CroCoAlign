@@ -41,22 +41,40 @@ class MyLightningModule(pl.LightningModule):
         )
         self.hidden_size = self.config.hidden_size
 
-        self.transfomer_sentence_context_config = DistilBertConfig(n_heads=self.hparams.sentence_context_n_heads,
-                                                                   n_layers=self.hparams.sentence_context_n_layers,
-                                                                   dropout=self.hparams.dropout)
-        self.transfomer_sentence_context = DistilBertModel(self.transfomer_sentence_context_config)
+        self.transfomer_sentence_context_config = DistilBertConfig(
+            n_heads=self.hparams.sentence_context_n_heads,
+            n_layers=self.hparams.sentence_context_n_layers,
+            dropout=self.hparams.dropout,
+        )
+        self.transfomer_sentence_context = DistilBertModel(
+            self.transfomer_sentence_context_config
+        )
 
-        self.classification_head = torch.nn.Sequential(torch.nn.Linear(self.hidden_size, self.hidden_size // 2),
-                                                       torch.nn.Dropout(self.hparams.dropout),
-                                                       torch.nn.ReLU(),
-                                                       torch.nn.Linear(self.hidden_size // 2, 1))
+        self.classification_head = torch.nn.Sequential(
+            torch.nn.Linear(self.hidden_size, self.hidden_size // 2),
+            torch.nn.Dropout(self.hparams.dropout),
+            torch.nn.ReLU(),
+            torch.nn.Linear(self.hidden_size // 2, 1),
+        )
 
         # self.activation = instantiate(self.hparams.activation)
         self.val_metrics: torch.nn.ModuleDict = torch.nn.ModuleDict(
-            {"acc": Accuracy(), "recall": Recall(), "prec": Precision(), "f1": F1Score()})
+            {
+                "acc": Accuracy(),
+                "recall": Recall(),
+                "prec": Precision(),
+                "f1": F1Score(),
+            }
+        )
 
         self.test_metrics: torch.nn.ModuleDict = torch.nn.ModuleDict(
-            {"acc": Accuracy(), "recall": Recall(), "prec": Precision(), "f1": F1Score()})
+            {
+                "acc": Accuracy(),
+                "recall": Recall(),
+                "prec": Precision(),
+                "f1": F1Score(),
+            }
+        )
 
     def forward(self, batch: Dict[str, Any], **kwargs) -> Dict[str, torch.Tensor]:
         """
@@ -85,7 +103,6 @@ class MyLightningModule(pl.LightningModule):
         compute_loss: bool = True,
         compute_metrics: bool = False,
     ):
-        
         # Use pre-computed sentence embeddings or compute them on the fly
         if self.precomputed_embeddings:
             encoding_sources = batch["sources_embeds"]
@@ -97,22 +114,26 @@ class MyLightningModule(pl.LightningModule):
             encoding_targets = model_out_targets["encoding"]
 
         # output transformer
-        encoding_sources = self.transfomer_sentence_context(inputs_embeds=encoding_sources.unsqueeze(dim=0))[
-            "last_hidden_state"].squeeze(dim=0)
-        encoding_targets = self.transfomer_sentence_context(inputs_embeds=encoding_targets.unsqueeze(dim=0))[
-            "last_hidden_state"].squeeze(dim=0)
+        encoding_sources = self.transfomer_sentence_context(
+            inputs_embeds=encoding_sources.unsqueeze(dim=0)
+        )["last_hidden_state"].squeeze(dim=0)
+        encoding_targets = self.transfomer_sentence_context(
+            inputs_embeds=encoding_targets.unsqueeze(dim=0)
+        )["last_hidden_state"].squeeze(dim=0)
 
         cartesian_matrix_index = torch.cartesian_prod(
             torch.arange(0, len(encoding_sources), device=encoding_sources.device),
-            torch.arange(0, len(encoding_targets), device=encoding_sources.device))
+            torch.arange(0, len(encoding_targets), device=encoding_sources.device),
+        )
         x_, y_ = cartesian_matrix_index[:, 0], cartesian_matrix_index[:, 1]
         cartesian_matrix_prod = encoding_sources[x_] * encoding_targets[y_]
         classification_output = self.classification_head(cartesian_matrix_prod)
         result = dict()
 
         if compute_loss and "gold_matrix" in batch:
-            result["loss"] = F.binary_cross_entropy_with_logits(classification_output,
-                                                                batch["gold_matrix"].float().unsqueeze(-1))
+            result["loss"] = F.binary_cross_entropy_with_logits(
+                classification_output, batch["gold_matrix"].float().unsqueeze(-1)
+            )
         result["predictions"] = F.sigmoid(classification_output)
         result["matrix_index"] = cartesian_matrix_index
 
@@ -121,7 +142,9 @@ class MyLightningModule(pl.LightningModule):
     def training_step(self, batch: Any, batch_idx: int) -> torch.Tensor:
         all_losses = []
         for batch_s in batch:
-            step_out = self.step(batch_s, batch_idx, split="train", compute_metrics=False)
+            step_out = self.step(
+                batch_s, batch_idx, split="train", compute_metrics=False
+            )
             if step_out is not None:
                 loss = step_out["loss"]
                 all_losses.append(loss)
@@ -137,7 +160,9 @@ class MyLightningModule(pl.LightningModule):
         else:
             return None
 
-    def validation_step(self, batch: Any, batch_idx: int, dataset_index: int = -1) -> torch.Tensor:
+    def validation_step(
+        self, batch: Any, batch_idx: int, dataset_index: int = -1
+    ) -> torch.Tensor:
         step_out = self.step(batch, batch_idx, split=f"val", compute_metrics=True)
         if step_out is not None:
             loss = step_out["loss"]
@@ -155,8 +180,7 @@ class MyLightningModule(pl.LightningModule):
         return None
 
     def validation_epoch_end(self, outputs):
-        
-        #task_name = self.metadata.dataset_names["val"][0].replace(".jsonl", "").replace("val_", "")
+        # task_name = self.metadata.dataset_names["val"][0].replace(".jsonl", "").replace("val_", "")
         columns = ["s_ids", "t_ids", "source", "targets"]
         all_losses = []
         f1_list = []
@@ -166,7 +190,7 @@ class MyLightningModule(pl.LightningModule):
             all_preds = []
             all_golds = []
             data = []
-            if isinstance(output, list): ## More than one file in the validation.
+            if isinstance(output, list):  ## More than one file in the validation.
                 for out in output:
                     all_losses.append(out["loss"])
                     preds = torch.round(out["predictions"].flatten())
@@ -182,11 +206,18 @@ class MyLightningModule(pl.LightningModule):
                         s_text = sources_text[s_idx]
                         t_texts = [targets_text[t] for t in targets]
                         t_ids = [targets_ids[t] for t in targets]
-                        data.append([sources_ids[s_idx], " -- ".join(t_ids),s_text, " -- ".join(t_texts)])
-                        #print(s_text, targets)
+                        data.append(
+                            [
+                                sources_ids[s_idx],
+                                " -- ".join(t_ids),
+                                s_text,
+                                " -- ".join(t_texts),
+                            ]
+                        )
+                        # print(s_text, targets)
                     all_preds.append(preds)
                     all_golds.append(out["gold_matrix"])
-            else: ## Only 1 file in the validaton.
+            else:  ## Only 1 file in the validaton.
                 all_losses.append(output["loss"])
                 preds = torch.round(output["predictions"].flatten())
                 prediciton_indices = output["matrix_index"][preds.bool()]
@@ -201,8 +232,15 @@ class MyLightningModule(pl.LightningModule):
                     s_text = sources_text[s_idx]
                     t_texts = [targets_text[t] for t in targets]
                     t_ids = [targets_ids[t] for t in targets]
-                    data.append([sources_ids[s_idx], " -- ".join(t_ids),s_text, " -- ".join(t_texts)])
-                    #print(s_text, targets)
+                    data.append(
+                        [
+                            sources_ids[s_idx],
+                            " -- ".join(t_ids),
+                            s_text,
+                            " -- ".join(t_texts),
+                        ]
+                    )
+                    # print(s_text, targets)
                 all_preds.append(preds)
                 all_golds.append(output["gold_matrix"])
 
@@ -233,7 +271,6 @@ class MyLightningModule(pl.LightningModule):
         return torch.stack(all_losses).mean()
 
     def test_epoch_end(self, outputs):
-
         all_losses = []
         f1_list = []
 
@@ -241,7 +278,7 @@ class MyLightningModule(pl.LightningModule):
             task_name = ds_name.replace("test_", "").replace(".jsonl", "")
             all_preds = []
             all_golds = []
-            if isinstance(output, list): ## Same as validation.
+            if isinstance(output, list):  ## Same as validation.
                 for out in output:
                     all_losses.append(out["loss"])
                     preds = torch.round(out["predictions"].flatten())
@@ -254,11 +291,11 @@ class MyLightningModule(pl.LightningModule):
                 all_golds.append(output["gold_matrix"])
             all_preds = torch.cat(all_preds, dim=0)
             all_golds = torch.cat(all_golds, dim=0)
-            #acc = self.test_metrics["acc"](all_preds, all_golds)
+            # acc = self.test_metrics["acc"](all_preds, all_golds)
             f1 = self.test_metrics["f1"](all_preds, all_golds)
             recall = self.test_metrics["recall"](all_preds, all_golds)
             prec = self.test_metrics["prec"](all_preds, all_golds)
-            #self.log(f"test_acc_{task_name}", acc)
+            # self.log(f"test_acc_{task_name}", acc)
             self.log(f"test_recall_{task_name}", recall)
             self.log(f"test_prec_{task_name}", prec)
             self.log(f"test_f1_{task_name}", f1)
@@ -270,15 +307,19 @@ class MyLightningModule(pl.LightningModule):
 
         return torch.stack(all_losses).mean()
 
-    def test_step(self, batch: Any, batch_idx: int, dataset_index: int = None) -> torch.Tensor:
-        step_out = self.step(batch, batch_idx, split="test", compute_metrics=True, compute_loss=False)
+    def test_step(
+        self, batch: Any, batch_idx: int, dataset_index: int = None
+    ) -> torch.Tensor:
+        step_out = self.step(
+            batch, batch_idx, split="test", compute_metrics=True, compute_loss=False
+        )
         loss = torch.zeros(1)
 
         return dict(
             loss=loss,
             predictions=step_out["predictions"],
             matrix_index=step_out["matrix_index"],
-            gold_matrix=batch["gold_matrix"]
+            gold_matrix=batch["gold_matrix"],
         )
 
     def configure_optimizers(
@@ -298,8 +339,13 @@ class MyLightningModule(pl.LightningModule):
             - Tuple of dictionaries as described, with an optional 'frequency' key.
             - None - Fit will run without any optimizer.
         """
-        opt = hydra.utils.instantiate(self.hparams.optimizer, params=self.parameters(), _convert_="partial")
-        self.hparams.lr_scheduler.num_warmup_steps = self.hparams.warmup_percentage * self.hparams.lr_scheduler.num_training_steps
+        opt = hydra.utils.instantiate(
+            self.hparams.optimizer, params=self.parameters(), _convert_="partial"
+        )
+        self.hparams.lr_scheduler.num_warmup_steps = (
+            self.hparams.warmup_percentage
+            * self.hparams.lr_scheduler.num_training_steps
+        )
         if "lr_scheduler" not in self.hparams:
             return [opt]
         scheduler = hydra.utils.instantiate(self.hparams.lr_scheduler, optimizer=opt)
