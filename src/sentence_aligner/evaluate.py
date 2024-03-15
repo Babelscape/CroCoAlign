@@ -30,7 +30,7 @@ class TestEvaluator:
         recovery="labse-batch",
         out="tsv",
     ):
-        self.device: str = "cuda"
+        self.device: str = "cuda" if torch.cuda.is_available() else "cpu"
         self.precomputed_embeddings: bool = precomputed_embeddings
         self.recovery: str = recovery
         self.fileformat: str = out
