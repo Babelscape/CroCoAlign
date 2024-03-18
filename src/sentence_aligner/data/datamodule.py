@@ -233,7 +233,6 @@ class MyDataModule(pl.LightningDataModule):
     def _read_data(self):
         sample_data = dict()
 
-        r = random.Random(42)
         for split in ["train", "val", "test"]:
             valid_dataset_names: Optional[Set[str]] = self.split_types2names[split]
 

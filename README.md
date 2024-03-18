@@ -53,9 +53,18 @@ To install CroCoAlign, follow these steps:
 
 You can download the official checkpoint at the following link [TBR].
 
+## Preprocessing
+
+Under the **src/sentence_aligner/preprocessing** folder you can find two python scripts.
+
+- **dataset_generator.py** is needed to convert the original xml Opus documents into the jsonl format required for training. Under the **data** folder you can already find the preprocessed data for convenience.
+- **precompute_embeddings.py** (REQUIRED) is needed to precompute the embeddings for the data.
+
 ## Training
 
-To train a new instance of CroCoAlign, run the command:
+1. Set the variable **core.data_dir** contained in the **conf/default.yml** file to the path containing the preprocessed data for train, validation and test (output of the previous preprocessing step).
+
+2. To train a new instance of CroCoAlign, run the command:
 
 `python src/sentence_aligner/run.py param_1 ... param_n`
 

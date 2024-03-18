@@ -1,3 +1,5 @@
 .vscode
 data-emb
 checkpoints/*
+wandb
+storage

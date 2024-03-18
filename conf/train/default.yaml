@@ -53,7 +53,6 @@ logging:
     _target_: pytorch_lightning.loggers.WandbLogger
 
     project: ${core.project_name}
-    entity: "framolfese"
     log_model: False
     mode: 'online'
     tags: ${core.tags}

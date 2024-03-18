@@ -6,7 +6,6 @@ import time
 from tqdm import tqdm
 from sentence_transformers import SentenceTransformer
 
-
 class DatasetPreprocess:
     def __init__(self) -> None:
         self.device = "cuda"
@@ -14,7 +13,7 @@ class DatasetPreprocess:
             self.device
         )
 
-    def preprocess(self, filedir):
+    def preprocess(self, filedir, outdir):
         avg_time = 0
         for filename in tqdm(os.listdir(filedir)):
             start_time = time.time()
@@ -65,7 +64,7 @@ class DatasetPreprocess:
                         target_embeddings[tid2tindex[tid]]
                     )
                 samples.append(example)
-            fw = jsonlines.open(f"{filedir}/{filename}", mode="w")
+            fw = jsonlines.open(f"{outdir}/{filename}", mode="w")
             for line in samples:
                 fw.write(line)
             fw.close()
@@ -83,8 +82,14 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         "filedir",
-        help="Path to the file containing the ground truth (supported format: jsonl).",
+        "-i",
+        help="Path to the file containing the data to be preprocessed (supported format: jsonl).",
+    )
+    parser.add_argument(
+        "outdir",
+        "-o",
+        help="Path to the file containing the data to be preprocessed (supported format: jsonl).",
     )
     args = parser.parse_args()
     Dp = DatasetPreprocess()
-    Dp.preprocess(args.filedir)
+    Dp.preprocess(args.filedir, args.outdir)
