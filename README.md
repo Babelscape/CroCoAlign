@@ -1,9 +1,38 @@
+<div align="center">
+
 # <img src="media/crocodile.png" alt="img" width="30" height="30"/> CroCoAlign: A Cross-Lingual, Context-Aware and Fully-Neural Sentence Alignment System for Long Texts.
 
+[![Conference](https://img.shields.io/badge/EACL-2024-red
+)](https://2024.eacl.org)
+
+</div>
+
 This is the official repository for *CroCoAlign: A Cross-Lingual, Context-Aware and Fully-Neural Sentence Alignment System for Long Texts*.  
-For additional information, check out the paper at the following link <link>.
+For additional information, check out the paper at the following [link](https://aclanthology.org/2024.eacl-long.135/).
 
 ![CroCoAlign](media/architecture.png "CroCoAlign Architecture")
+
+## Citation
+
+```bibtex
+@inproceedings{molfese-etal-2024-neuralign,
+    title = "Neuralign: A Context-Aware, Cross-Lingual and Fully-Neural Sentence Alignment System for Long Texts",
+    author = "Molfese, Francesco  and
+      Bejgu, Andrei  and
+      Tedeschi, Simone  and
+      Conia, Simone  and
+      Navigli, Roberto",
+    editor = "Graham, Yvette  and
+      Purver, Matthew",
+    booktitle = "Proceedings of the 18th Conference of the European Chapter of the Association for Computational Linguistics (Volume 1: Long Papers)",
+    month = mar,
+    year = "2024",
+    address = "St. Julian{'}s, Malta",
+    publisher = "Association for Computational Linguistics",
+    url = "https://aclanthology.org/2024.eacl-long.135",
+    pages = "2209--2220"
+}
+```
 
 ## Features
 
@@ -17,12 +46,12 @@ For additional information, check out the paper at the following link <link>.
 To install CroCoAlign, follow these steps:
 
 1. Clone the repository: `git clone https://github.com/Babelscape/CroCoAlign.git`
-2. Create a new conda environment from the env.yml file: `conda env create -f environment.yml`
+2. Create a new conda environment from the env.yml file: `conda env create -f env.yml`
 3. Activate the environment: `conda activate crocoalign`
 
 ## Download
 
-You can download the official checkpoint at the following link: <link>
+You can download the official checkpoint at the following link [TBR].
 
 ## Training
 
@@ -59,4 +88,13 @@ To align your own parallel documents using CroCoAlign, you can run the following
 You can call the script with the `-h` command to get information about the available command options.  
 The default format of the source and target document is considered to be .txt.  
 In case you would like to try another sentence encoder, you can either provide a .jsonl files containing the source and target sentences with or without precomputed sentence embeddings (by using the `-p` command) or selecting another sentence encoder at runtime.  
-You can also select the desired output format of the final alignment (either .tsv or .jsonl). 
+You can also select the desired output format of the final alignment (either .tsv or .jsonl).
+
+# License 
+CroCoAlign is licensed under the CC BY-SA-NC 4.0 license. The text of the license can be found [here](https://github.com/Babelscape/CroCoAlign/blob/main/LICENSE).
+
+We underline that the dataset we used in our experiments has been extracted from the [Opus website](https://opus.nlpl.eu/Books/corpus/version/Books), which was introduced in the following work: 
+J. Tiedemann, 2012, [Parallel Data, Tools and Interfaces in OPUS](http://www.lrec-conf.org/proceedings/lrec2012/pdf/463_Paper.pdf). In Proceedings of the 8th International Conference on Language Resources and Evaluation (LREC 2012).
+
+# Acknowledgments
+The code in this repository is built on top of [![](https://shields.io/badge/-nn--template-emerald?style=flat&logo=github&labelColor=gray)](https://github.com/grok-ai/nn-template).
