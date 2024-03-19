@@ -12,10 +12,10 @@ This is the official repository for [*CroCoAlign: A Cross-Lingual, Context-Aware
 ![CroCoAlign](media/architecture.png "CroCoAlign Architecture")
 
 ## Citation
-
+This work has been published at EACL 2024 (main conference). If you use any part, please consider citing our paper as follows:
 ```bibtex
-@inproceedings{molfese-etal-2024-neuralign,
-    title = "{C}ro{C}o{A}lign: A Context-Aware, Cross-Lingual and Fully-Neural Sentence Alignment System for Long Texts",
+@inproceedings{molfese-etal-2024-crocoalign,
+    title = "{C}ro{C}o{A}lign: A Cross-Lingual, Context-Aware and Fully-Neural Sentence Alignment System for Long Texts",
     author = "Molfese, Francesco  and
       Bejgu, Andrei  and
       Tedeschi, Simone  and
