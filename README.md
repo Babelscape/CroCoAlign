@@ -7,8 +7,7 @@
 
 </div>
 
-This is the official repository for *CroCoAlign: A Cross-Lingual, Context-Aware and Fully-Neural Sentence Alignment System for Long Texts*.  
-For additional information, check out the paper at the following [link](https://aclanthology.org/2024.eacl-long.135/).
+This is the official repository for [*CroCoAlign: A Cross-Lingual, Context-Aware and Fully-Neural Sentence Alignment System for Long Texts*](https://aclanthology.org/2024.eacl-long.135/).  
 
 ![CroCoAlign](media/architecture.png "CroCoAlign Architecture")
 
