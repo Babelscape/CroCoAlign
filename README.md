@@ -15,7 +15,7 @@ This is the official repository for [*CroCoAlign: A Cross-Lingual, Context-Aware
 
 ```bibtex
 @inproceedings{molfese-etal-2024-neuralign,
-    title = "Neuralign: A Context-Aware, Cross-Lingual and Fully-Neural Sentence Alignment System for Long Texts",
+    title = "{C}ro{C}o{A}lign: A Context-Aware, Cross-Lingual and Fully-Neural Sentence Alignment System for Long Texts",
     author = "Molfese, Francesco  and
       Bejgu, Andrei  and
       Tedeschi, Simone  and
