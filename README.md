@@ -50,22 +50,26 @@ To install CroCoAlign, follow these steps:
 
 ## Download
 
-You can download the official checkpoint at the following link [TBR].
+You can download the official checkpoint at the following [link](https://drive.google.com/file/d/1DwOAB50loUc0lBe6gImX8TI7RqxD8XCw/view).
 
 ## Preprocessing
 
 Under the **src/sentence_aligner/preprocessing** folder you can find two python scripts.
 
 - **dataset_generator.py** is needed to convert the original xml Opus documents into the jsonl format required for training. Under the **data** folder you can already find the preprocessed data for convenience.
-- **precompute_embeddings.py** (REQUIRED) is needed to precompute the embeddings for the data.
+- **precompute_embeddings.py** (OPTIONAL) can be used to precompute the embeddings for the data.
 
 ## Training
 
-1. Set the variable **core.data_dir** contained in the **conf/default.yml** file to the path containing the preprocessed data for train, validation and test (output of the previous preprocessing step).
+1. Set the variable **core.data_dir** contained in the **conf/default.yml** file to the path containing the data for train, validation and test.
 
-2. To train a new instance of CroCoAlign, run the command:
+2. If you want the system to compute embeddings at runtime, set the variables **conf.nn.data.precomputed_embeddings** and **conf.nn.module.precomputed_embeddings** to **False**. If you have run the **precompute_embeddings.py** script to generate embeddings for the data, you can set both the variables to **True** in order to let the system skip the sentence embedding step during the forward pass. 
 
-`python src/sentence_aligner/run.py param_1 ... param_n`
+3. Set the variables **conf.transformer_name** and **conf.tokenizer_transformer_name** to the desired sentence transformers using the HuggingFace name (e.g. "sentence-transformers/LaBSE") or a local path. 
+
+3. To train a new instance of CroCoAlign, run the command:
+
+`PYTHONPATH="src" python src/sentence_aligner/run.py param_1 ... param_n`
 
 Where param_1 ... param_n are the parameters of the network that can be modified at runtime.  
 You can consult which parameters can be changed by accessing the **conf** directory and its subdirectories.  
@@ -75,23 +79,23 @@ Alternatively, you can also modify the parameter directly in the .yaml files ins
 
 To evaluate CroCoAlign on the Opus book dataset, run the following command:
 
-`python src/sentence_aligner/evaluate.py ckpt_path test_data_path`
+`PYTHONPATH="src" python src/sentence_aligner/evaluate.py ckpt_path test_data_path`
 
 You can call the script with the `-h` command to get information about the available command options.  
 The data is already splitted into train, val and test and its available under the **data** folder. 
 
 To reproduce the paper results against Vecalign, you can run the following script:
 
-`python data/results/scripts/paper_results.py data/results/data/books/crocoalign-{version}.tsv`
+`python results/scripts/paper_results.py results/data/opus/books/crocoalign-{version}.tsv`
 
 Where {version} needs to be replaced with one of the available recovery strategies.  
-See the content of the **results/data/books/** folder to see the available options.
+See the content of the **results/data/opus/books/** folder to see the available options.
 
 ## Inference
 
 To align your own parallel documents using CroCoAlign, you can run the following command:
 
-`python scr/sentence_aligner/crocoalign.py source_document target_document`
+`PYTHONPATH="scr" python scr/sentence_aligner/crocoalign.py source_document target_document`
 
 You can call the script with the `-h` command to get information about the available command options.  
 The default format of the source and target document is considered to be .txt.  

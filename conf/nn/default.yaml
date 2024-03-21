@@ -12,6 +12,8 @@ data:
     test:
       _target_: sentence_aligner.data.dataset.MyDataset
       split: test
+
+  precomputed_embeddings: False
   gpus: ${train.trainer.gpus}
   root_path: ${core.data_dir}
   num_workers:
@@ -24,7 +26,6 @@ data:
     val: ${nn.data.batch_size.train}
     test: ${nn.data.batch_size.train}
 
-  # example
   transformer_name: ${nn.transformer_name}
   max_ids: 2000
   
@@ -37,7 +38,7 @@ module:
   transformer_name: ${nn.transformer_name}
   warmup_percentage: 0.1
   freeze_encoder: True
-  precomputed_embeddings: True
+  precomputed_embeddings: False
   dropout: 0.2
   sentence_context_n_heads: 6
   sentence_context_n_layers: 6

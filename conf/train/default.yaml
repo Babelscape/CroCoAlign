@@ -17,8 +17,8 @@ trainer:
   ## Aumentare max_steps (in futuro eliminare grad_clip_val)
 
 restore:
-  ckpt_or_run_path: /home/molfese/data/neural-sentence-aligner/storage/storage/sentence_aligner/2iz2jl7f/checkpoints/epoch=0-step=1249999.ckpt.zip
-  mode: finetune # null, finetune, hotstart, continue
+  ckpt_or_run_path: null
+  mode: null # null, finetune, hotstart, continue
 
 monitor:
   metric: 'val_f1_full'

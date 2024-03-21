@@ -34,33 +34,34 @@ class CustomLoader(DataLoader):
         if len(batch) > 0:
             yield self.collate_fn(batch)
 
-
-def sample_generator(file_paths):
+def sample_generator(file_paths, precomputed_embeddings):
     for dataset_file in file_paths:
         with (dataset_file).open("r") as fr:
             for line in fr:
-                # if len(samples) > 10000:
-                #     break
                 example = json.loads(line)
-                yield dict(
-                    sources=example["sources"]["text"],
-                    sources_ids=example["sources"]["ids"],
-                    sources_embs=torch.tensor(example["sources"]["embs"]),
-                    targets=example["targets"]["text"],
-                    targets_ids=example["targets"]["ids"],
-                    targets_embs=torch.tensor(example["targets"]["embs"]),
-                )
-
+                if precomputed_embeddings:
+                    yield dict(sources=example["sources"]["text"],
+                                sources_ids=example["sources"]["ids"],
+                                sources_embs=torch.tensor(example["sources"]["embs"]),
+                                targets=example["targets"]["text"],
+                                targets_ids=example["targets"]["ids"],
+                                targets_embs=torch.tensor(example["targets"]["embs"]))
+                else:
+                    yield dict(sources=example["sources"]["text"],
+                                sources_ids=example["sources"]["ids"],
+                                targets=example["targets"]["text"],
+                                targets_ids=example["targets"]["ids"])
 
 class MyDataset(IterableDataset):
-    def __init__(self, split: Split, datamodule, task_name, **kwargs):
+    def __init__(self, split: Split, datamodule, task_name, precomputed_embeddings, **kwargs):
         super().__init__()
         self.split: Split = split
         self.task_name = task_name
+        self.precomputed_embeddings = precomputed_embeddings
         self.file_paths = datamodule.samples[split][task_name]
 
     def __iter__(self) -> Iterator:
-        return sample_generator(self.file_paths)
+        return sample_generator(self.file_paths, self.precomputed_embeddings)
 
     # def __len__(self) -> int:
     #     return len(self.samples)
@@ -79,9 +80,7 @@ def main(cfg: omegaconf.DictConfig) -> None:
     Args:
         cfg: the hydra configuration
     """
-    _: Dataset = hydra.utils.instantiate(
-        cfg.nn.data.datasets.train, split="train", _recursive_=False
-    )
+    _: Dataset = hydra.utils.instantiate(cfg.nn.data.datasets.train, split="train", _recursive_=False)
 
 
 if __name__ == "__main__":

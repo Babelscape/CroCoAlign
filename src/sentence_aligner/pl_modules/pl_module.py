@@ -23,22 +23,23 @@ class MyLightningModule(pl.LightningModule):
         super().__init__()
         self.save_hyperparameters(
             logger=False, ignore=("metadata",)
-        )  # populate self.hparams with args and kwargs automagically!
+        )
         self.metadata: MetaData = metadata
         self.config = AutoConfig.from_pretrained(self.hparams.transformer_name)
+
+        self.precomputed_embeddings: bool = self.hparams.precomputed_embeddings
+
         self.transformer: SentenceTransformer = SentenceTransformer(
             self.hparams.transformer_name
         )
 
-        self.precomputed_embeddings: bool = self.hparams.precomputed_embeddings
-
-        ## Freeze or unfreeze Labse
         self.sentence_encoder = TextEncoder(
             transformer_name=self.hparams.transformer_name,
             transformer=self.transformer,
             freeze_encoder=self.hparams.freeze_encoder,
             dropout=0.0,
         )
+            
         self.hidden_size = self.config.hidden_size
 
         self.transfomer_sentence_context_config = DistilBertConfig(
@@ -103,7 +104,7 @@ class MyLightningModule(pl.LightningModule):
         compute_loss: bool = True,
         compute_metrics: bool = False,
     ):
-        # Use pre-computed sentence embeddings or compute them on the fly
+        # Use pre-computed sentence embeddings or compute them at runtime
         if self.precomputed_embeddings:
             encoding_sources = batch["sources_embeds"]
             encoding_targets = batch["targets_embeds"]

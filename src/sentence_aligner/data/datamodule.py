@@ -12,13 +12,11 @@ import omegaconf
 import pytorch_lightning as pl
 import torch
 from omegaconf import DictConfig
-from torch.nn.utils.rnn import pad_sequence
 from torch.utils.data import DataLoader
 from transformers import AutoTokenizer, PreTrainedTokenizer
 
 from nn_core.common import PROJECT_ROOT
-from sentence_aligner.data.dataset import CustomLoader, MyDataset
-from sentence_aligner.util.utils import GlossManager, char2pos, load_inventory
+from sentence_aligner.data.dataset import MyDataset
 
 pylogger = logging.getLogger(__name__)
 
@@ -112,6 +110,7 @@ def encode_samples(
     samples: List,
     context_tokenizer: PreTrainedTokenizer,
     gloss_tokenizer: PreTrainedTokenizer,
+    precomputed_embeddings: bool
 ):
     pretokenized = any([a["pretokenized"] for a in samples if "pretokenized" in a])
 
@@ -163,8 +162,12 @@ def encode_samples(
         return_token_type_ids=True,
     )
 
-    sources_embeds = torch.stack([g for s in samples for g in s["sources_embs"]])
-    targets_embeds = torch.stack([g for s in samples for g in s["targets_embs"]])
+    sources_embeds = None
+    targets_embeds = None
+
+    if precomputed_embeddings:
+        sources_embeds = torch.stack([g for s in samples for g in s["sources_embs"]])
+        targets_embeds = torch.stack([g for s in samples for g in s["targets_embs"]])
 
     output = dict()
     output["sources_text"] = sources
@@ -186,9 +189,10 @@ def collate_fn(
     samples: List,
     gloss_tokenizer: PreTrainedTokenizer,
     context_tokenizer: PreTrainedTokenizer,
+    precomputed_embeddings: bool
 ):
     encoded_example = encode_samples(
-        samples, gloss_tokenizer=gloss_tokenizer, context_tokenizer=context_tokenizer
+        samples, gloss_tokenizer=gloss_tokenizer, context_tokenizer=context_tokenizer, precomputed_embeddings=precomputed_embeddings
     )
     return encoded_example
 
@@ -205,13 +209,14 @@ class MyDataModule(pl.LightningDataModule):
         val_dataset_names: List[str] = None,
         train_dataset_names: Optional[List[str]] = None,
         test_dataset_names: Optional[List[str]] = None,
+        precomputed_embeddings: bool = False,
         max_ids: int = 2000,
     ):
         super().__init__()
         self.datasets = datasets
+        self.precomputed_embeddings = precomputed_embeddings
         self.num_workers = num_workers
         self.batch_size = batch_size
-        # https://pytorch-lightning.readthedocs.io/en/stable/common/trainer.html#gpus
         self.pin_memory: bool = gpus is not None and str(gpus) != "0"
 
         self.max_ids = max_ids
@@ -287,19 +292,19 @@ class MyDataModule(pl.LightningDataModule):
         if stage is None or stage == "fit":
             self.train_dataset = [
                 hydra.utils.instantiate(
-                    self.datasets.train, datamodule=self, task_name=task_name
+                    self.datasets.train, datamodule=self, task_name=task_name, precomputed_embeddings=self.precomputed_embeddings
                 )
                 for task_name in self.samples["train"].keys()
             ]
             self.val_datasets = [
                 hydra.utils.instantiate(
-                    self.datasets.val, datamodule=self, task_name=task_name
+                    self.datasets.val, datamodule=self, task_name=task_name, precomputed_embeddings=self.precomputed_embeddings
                 )
                 for task_name in self.samples["val"].keys()
             ]
             self.test_datasets = [
                 hydra.utils.instantiate(
-                    self.datasets.test, datamodule=self, task_name=task_name
+                    self.datasets.test, datamodule=self, task_name=task_name, precomputed_embeddings=self.precomputed_embeddings
                 )
                 for task_name in self.samples["test"].keys()
             ]
@@ -320,6 +325,7 @@ class MyDataModule(pl.LightningDataModule):
                     collate_fn,
                     gloss_tokenizer=self.tokenizer,
                     context_tokenizer=self.tokenizer,
+                    precomputed_embeddings=self.precomputed_embeddings,
                 ),
             )
             for dataset in self.train_dataset
@@ -338,6 +344,7 @@ class MyDataModule(pl.LightningDataModule):
                     collate_fn,
                     gloss_tokenizer=self.tokenizer,
                     context_tokenizer=self.tokenizer,
+                    precomputed_embeddings=self.precomputed_embeddings,
                 ),
             )
             for dataset in self.val_datasets
@@ -356,6 +363,7 @@ class MyDataModule(pl.LightningDataModule):
                     collate_fn,
                     gloss_tokenizer=self.tokenizer,
                     context_tokenizer=self.tokenizer,
+                    precomputed_embeddings=self.precomputed_embeddings,
                 ),
             )
             for dataset in self.test_datasets

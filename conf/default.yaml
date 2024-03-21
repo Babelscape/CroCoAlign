@@ -1,6 +1,6 @@
 # metadata specialised for each experiment
 core:
-  project_name: sentence_aligner
+  project_name: crocoalign
   storage_dir: ${oc.env:PROJECT_ROOT}/storage
   data_dir: ${oc.env:PROJECT_ROOT}/data/opus/books
   version: 0.0.1
