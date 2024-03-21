@@ -110,3 +110,5 @@ J. Tiedemann, 2012, [Parallel Data, Tools and Interfaces in OPUS](http://www.lre
 
 # Acknowledgments
 The code in this repository is built on top of [![](https://shields.io/badge/-nn--template-emerald?style=flat&logo=github&labelColor=gray)](https://github.com/grok-ai/nn-template).
+
+The icon appearing in this README and in the official paper title was taken from Flaticon.com. 
