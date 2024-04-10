@@ -14,8 +14,8 @@ This is the official repository for [*CroCoAlign: A Cross-Lingual, Context-Aware
 ## Citation
 This work has been published at EACL 2024 (main conference). If you use any part, please consider citing our paper as follows:
 ```bibtex
-@inproceedings{molfese-etal-2024-crocoalign,
-    title = "{C}ro{C}o{A}lign: A Cross-Lingual, Context-Aware and Fully-Neural Sentence Alignment System for Long Texts",
+@inproceedings{molfese-etal-2024-neuralign,
+    title = "CroCoAlign: A Cross-Lingual, Context-Aware and Fully-Neural Sentence Alignment System for Long Texts",
     author = "Molfese, Francesco  and
       Bejgu, Andrei  and
       Tedeschi, Simone  and
@@ -29,7 +29,8 @@ This work has been published at EACL 2024 (main conference). If you use any part
     address = "St. Julian{'}s, Malta",
     publisher = "Association for Computational Linguistics",
     url = "https://aclanthology.org/2024.eacl-long.135",
-    pages = "2209--2220"
+    pages = "2209--2220",
+    abstract = "Sentence alignment {--} establishing links between corresponding sentences in two related documents {--} is an important NLP task with several downstream applications, such as machine translation (MT). Despite the fact that existing sentence alignment systems have achieved promising results, their effectiveness is based on auxiliary information such as document metadata or machine-generated translations, as well as hyperparameter-sensitive techniques. Moreover, these systems often overlook the crucial role that context plays in the alignment process. In this paper, we address the aforementioned issues and propose CroCoAlign: the first context-aware, end-to-end and fully neural architecture for sentence alignment. Our system maps source and target sentences in long documents by contextualizing their sentence embeddings with respect to the other sentences in the document. We extensively evaluate CroCoAlign on a multilingual dataset consisting of 20 language pairs derived from the Opus project, and demonstrate that our model achieves state-of-the-art performance. To ensure reproducibility, we release our code and model checkpoints at https://github.com/Babelscape/CroCoAlign.",
 }
 ```
 
