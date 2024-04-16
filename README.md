@@ -97,7 +97,7 @@ See the content of the **results/data/opus/books/** folder to see the available 
 
 To align your own parallel documents using CroCoAlign, you can run the following command:
 
-`PYTHONPATH="scr" python scr/sentence_aligner/crocoalign.py source_document target_document`
+`PYTHONPATH="src" python src/sentence_aligner/crocoalign.py source_document target_document`
 
 You can call the script with the `-h` command to get information about the available command options.  
 The default format of the source and target document is considered to be .txt.  
