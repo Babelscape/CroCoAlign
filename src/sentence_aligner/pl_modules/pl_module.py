@@ -61,19 +61,19 @@ class MyLightningModule(pl.LightningModule):
         # self.activation = instantiate(self.hparams.activation)
         self.val_metrics: torch.nn.ModuleDict = torch.nn.ModuleDict(
             {
-                "acc": Accuracy(),
-                "recall": Recall(),
-                "prec": Precision(),
-                "f1": F1Score(),
+                "acc": Accuracy(task="binary"),
+                "recall": Recall(task="binary"),
+                "prec": Precision(task="binary"),
+                "f1": F1Score(task="binary"),
             }
         )
 
         self.test_metrics: torch.nn.ModuleDict = torch.nn.ModuleDict(
             {
-                "acc": Accuracy(),
-                "recall": Recall(),
-                "prec": Precision(),
-                "f1": F1Score(),
+                "acc": Accuracy(task="binary"),
+                "recall": Recall(task="binary"),
+                "prec": Precision(task="binary"),
+                "f1": F1Score(task="binary"),
             }
         )
 

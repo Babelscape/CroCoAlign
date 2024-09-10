@@ -1,11 +1,10 @@
 import json
-from typing import Dict, Iterator, Tuple, Union
+from typing import Iterator
 
 import hydra
 import omegaconf
 import torch
 from torch.utils.data import DataLoader, Dataset, IterableDataset
-from torchvision.datasets import FashionMNIST
 
 from nn_core.common import PROJECT_ROOT
 from nn_core.nn_types import Split

@@ -3,8 +3,6 @@ from typing import Any, Dict
 import pytorch_lightning as pl
 import torch
 from sentence_transformers import SentenceTransformer
-from torch import nn
-
 
 class TextEncoder(pl.LightningModule):
     def __init__(self, transformer_name: str, *args, **kwargs) -> None:

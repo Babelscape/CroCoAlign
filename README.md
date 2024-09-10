@@ -45,8 +45,10 @@ This work has been published at EACL 2024 (main conference). If you use any part
 To install CroCoAlign, follow these steps:
 
 1. Clone the repository: `git clone https://github.com/Babelscape/CroCoAlign.git`
-2. Create a new conda environment from the env.yml file: `conda env create -f env.yml`
+2. Create a new conda environment: `conda create -n crocoalign python==3.9`
 3. Activate the environment: `conda activate crocoalign`
+4. Install the following pip version: `python -m pip install pip==24.0`
+5. Install the required dependencies with: `pip install -r requirements.txt`
 
 ## Download
 

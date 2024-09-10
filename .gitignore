@@ -3,3 +3,7 @@ data-emb
 checkpoints/*
 wandb
 storage
+src/sentence_aligner/__pycache__
+src/sentence_aligner/data/__pycache__
+src/sentence_aligner/modules/__pycache__
+src/sentence_aligner/pl_modules/__pycache__
