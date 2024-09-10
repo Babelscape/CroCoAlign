@@ -4,6 +4,7 @@
 
 [![Conference](https://img.shields.io/badge/EACL-2024-red
 )](https://2024.eacl.org)
+[![License: CC BY-NC 4.0](https://img.shields.io/badge/License-CC%20BY--NC%204.0-green.svg)](https://creativecommons.org/licenses/by-nc/4.0/)
 
 </div>
 
@@ -14,8 +15,8 @@ This is the official repository for [*CroCoAlign: A Cross-Lingual, Context-Aware
 ## Citation
 This work has been published at EACL 2024 (main conference). If you use any part, please consider citing our paper as follows:
 ```bibtex
-@inproceedings{molfese-etal-2024-crocoalign,
-    title = "{C}ro{C}o{A}lign: A Cross-Lingual, Context-Aware and Fully-Neural Sentence Alignment System for Long Texts",
+@inproceedings{molfese-etal-2024-neuralign,
+    title = "CroCoAlign: A Cross-Lingual, Context-Aware and Fully-Neural Sentence Alignment System for Long Texts",
     author = "Molfese, Francesco  and
       Bejgu, Andrei  and
       Tedeschi, Simone  and
@@ -29,7 +30,8 @@ This work has been published at EACL 2024 (main conference). If you use any part
     address = "St. Julian{'}s, Malta",
     publisher = "Association for Computational Linguistics",
     url = "https://aclanthology.org/2024.eacl-long.135",
-    pages = "2209--2220"
+    pages = "2209--2220",
+    abstract = "Sentence alignment {--} establishing links between corresponding sentences in two related documents {--} is an important NLP task with several downstream applications, such as machine translation (MT). Despite the fact that existing sentence alignment systems have achieved promising results, their effectiveness is based on auxiliary information such as document metadata or machine-generated translations, as well as hyperparameter-sensitive techniques. Moreover, these systems often overlook the crucial role that context plays in the alignment process. In this paper, we address the aforementioned issues and propose CroCoAlign: the first context-aware, end-to-end and fully neural architecture for sentence alignment. Our system maps source and target sentences in long documents by contextualizing their sentence embeddings with respect to the other sentences in the document. We extensively evaluate CroCoAlign on a multilingual dataset consisting of 20 language pairs derived from the Opus project, and demonstrate that our model achieves state-of-the-art performance. To ensure reproducibility, we release our code and model checkpoints at https://github.com/Babelscape/CroCoAlign.",
 }
 ```
 
@@ -97,7 +99,7 @@ See the content of the **results/data/opus/books/** folder to see the available 
 
 To align your own parallel documents using CroCoAlign, you can run the following command:
 
-`PYTHONPATH="scr" python scr/sentence_aligner/crocoalign.py source_document target_document`
+`PYTHONPATH="src" python src/sentence_aligner/crocoalign.py source_document target_document`
 
 You can call the script with the `-h` command to get information about the available command options.  
 The default format of the source and target document is considered to be .txt.  
@@ -112,3 +114,5 @@ J. Tiedemann, 2012, [Parallel Data, Tools and Interfaces in OPUS](http://www.lre
 
 # Acknowledgments
 The code in this repository is built on top of [![](https://shields.io/badge/-nn--template-emerald?style=flat&logo=github&labelColor=gray)](https://github.com/grok-ai/nn-template).
+
+The icon appearing in this README and in the official paper title was taken from Flaticon.com. 
