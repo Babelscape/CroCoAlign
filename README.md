@@ -102,7 +102,8 @@ To align your own parallel documents using CroCoAlign, you can run the following
 `PYTHONPATH="src" python src/sentence_aligner/crocoalign.py source_document target_document`
 
 You can call the script with the `-h` command to get information about the available command options.  
-The default format of the source and target document is considered to be .txt.  
+The default format of the source and target document is considered to be .jsonl.
+You can find an example of the source and target documents required format under the `data/examples` directory.
 In case you would like to try another sentence encoder, you can either provide a .jsonl files containing the source and target sentences with or without precomputed sentence embeddings (by using the `-p` command) or selecting another sentence encoder at runtime.  
 You can also select the desired output format of the final alignment (either .tsv or .jsonl).
 
